@@ -1,0 +1,247 @@
+plugins {
+    id 'com.github.ben-manes.versions' version '0.15.0'
+    id 'com.github.hierynomus.license' version '0.14.0'
+    id 'net.researchgate.release' version '2.6.0'
+	id 'com.github.kt3k.coveralls' version '2.8.1'
+}
+
+apply plugin: 'maven'
+apply plugin: 'osgi'
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+apply plugin: 'checkstyle'
+apply plugin: 'com.github.hierynomus.license'
+apply plugin: 'jacoco'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+
+group = 'org.trellisldp'
+description = 'DRAS-TIC Trellis Implementation'
+
+ext {
+    moduleName = "org.trellisldp.drastic"
+    vendor = 'Trellis LDP'
+    homepage = 'http://www.trellisldp.org'
+    docURL = 'http://www.trellisldp.org/apidocs'
+    license = 'Apache 2'
+
+    /* Dependencies */
+    trellisApiVersion = '0.1.0'
+    trellisSpiVersion = '0.1.0'
+    trellisVocabularyVersion = '0.1.0'
+    commonsRdfVersion = '0.3.0-incubating'
+    cassandraDriverVersion = '3.3.0'
+    slf4jVersion = '1.7.25'
+
+    /* Testing */
+    junitVersion = '4.12'
+    mockitoVersion = '2.10.0'
+    logbackVersion = '1.2.3'
+    jacocoVersion = "0.7.9"
+
+    /* OSGi */
+    projectOsgiVersion = project.version.replaceAll("-SNAPSHOT", ".SNAPSHOT")
+}
+
+configurations {
+    buildToolsConfig
+}
+
+dependencies {
+    api group: 'org.apache.commons', name: 'commons-rdf-api', version: commonsRdfVersion
+    api group: 'org.trellisldp', name: 'trellis-api', version: trellisApiVersion
+    api group: 'org.trellisldp', name: 'trellis-spi', version: trellisSpiVersion
+
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
+    implementation group: 'org.trellisldp', name: 'trellis-vocabulary', version: trellisVocabularyVersion
+    implementation group: 'com.datastax.cassandra', name: 'cassandra-driver-mapping', version: cassandraDriverVersion
+
+    testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
+    testImplementation group: 'junit', name: 'junit', version: junitVersion
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: mockitoVersion
+
+    buildToolsConfig 'org.trellisldp:trellis-build-tools:0.2.0'
+}
+
+repositories {
+    jcenter()
+    mavenCentral()
+    mavenLocal()
+    // TODO -- remove this after the first release of the API
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+}
+
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs.add("-Xlint:unchecked")
+        options.compilerArgs.add("-Xlint:deprecation")
+    }
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
+
+release {
+    tagTemplate = '$name-$version'
+}
+
+jar {
+    manifest {
+        description project.description
+        docURL project.docURL
+        vendor project.vendor
+        license project.license
+
+        instruction 'Automatic-Module-Name', moduleName
+        instruction 'Import-Package', '*'
+        instruction 'Export-Package', "${moduleName};version=${projectOsgiVersion}"
+    }
+}
+
+task sourceJar(type: Jar) {
+    classifier 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar) {
+    classifier 'javadoc'
+    from javadoc
+}
+
+artifacts {
+    archives javadocJar
+    archives sourceJar
+}
+
+jacoco {
+    toolVersion = jacocoVersion
+}
+
+license {
+    include "**/*.java"
+    header file('LICENSE')
+    strictCheck true
+    mapping {
+        java = 'SLASHSTAR_STYLE'
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
+processResources {
+    outputs.upToDateWhen { false }
+    expand project.properties
+}
+
+signing {
+    required { !version.endsWith("SNAPSHOT") && gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories.mavenDeployer {
+        def sonatypeUsername = project.hasProperty('ossrhUsername') ? ossrhUsername : ""
+        def sonatypePassword = project.hasProperty('ossrhPassword') ? ossrhPassword : ""
+        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+            authentication(userName: sonatypeUsername, password: sonatypePassword)
+        }
+
+        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+            authentication(userName: sonatypeUsername, password: sonatypePassword)
+        }
+
+        pom.project {
+            packaging 'jar'
+            url 'http://www.trellisldp.org'
+            inceptionYear '2017'
+            name 'Trellis/DRAS-TIC Repository Implementation'
+            description 'A scalable implementation of a Trellis repository'
+
+            organization {
+                name project.vendor
+                url project.homepage
+            }
+
+            developers {
+                developer {
+                    id 'ajs6f'
+                    name 'A. Soroka'
+                    email 'sorokaa @ (domain of organization url)'
+                    organization 'Smithsonian Institution'
+                    organizationUrl 'https://www.si.edu'
+                    roles {
+                        role 'developer'
+                    }
+                    timezone '-5'
+                }
+            }
+
+            scm {
+                connection 'scm:git:git://github.com/trellis-ldp/trellis-rosid-file.git'
+                developerConnection 'scm:git:git@github.com/trellis-ldp/trellis-rosid-file.git'
+                url 'https://github.com/trellis-ldp/trellis-rosid-file'
+                tag 'HEAD'
+            }
+
+            licenses {
+                license {
+                    name 'Apache License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0'
+                }
+            }
+        }
+    }
+}
+
+task processBuildTools(type: Copy) {
+    from {
+        configurations.buildToolsConfig.collect {
+            zipTree(it).matching {
+                include 'checkstyle/*.xml'
+                include 'license/*.txt'
+            }
+        }
+    }
+    into 'build'
+}
+
+checkstyle {
+    configFile = rootProject.file('build/checkstyle/checkstyle.xml')
+    configProperties.checkstyleConfigDir = rootProject.file('build/checkstyle/')
+    toolVersion = "8.1"
+}
+
+task docs(type: Javadoc) {
+    outputs.upToDateWhen { false }
+    source sourceSets.main.allJava
+    classpath = files(sourceSets.main.compileClasspath)
+    options {
+        links "http://docs.oracle.com/javase/8/docs/api/"
+        links "https://commons.apache.org/proper/commons-rdf/apidocs/"
+        links "http://www.trellisldp.org/apidocs/"
+        links "http://docs.datastax.com/en/drivers/java/3.1/"
+    }
+    destinationDir = new File(projectDir, "docs/${version}")
+}
+
+checkstyleMain.dependsOn processBuildTools
+afterReleaseBuild.dependsOn uploadArchives
+afterReleaseBuild.dependsOn docs
+
