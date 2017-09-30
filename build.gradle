@@ -29,8 +29,8 @@ ext {
     license = 'Apache 2'
 
     /* Dependencies */
-    trellisApiVersion = '0.1.0'
-    trellisSpiVersion = '0.1.0'
+    trellisApiVersion = '0.1.1'
+    trellisSpiVersion = '0.1.4'
     trellisVocabularyVersion = '0.1.0'
     commonsRdfVersion = '0.3.0-incubating'
     cassandraDriverVersion = '3.3.0'
