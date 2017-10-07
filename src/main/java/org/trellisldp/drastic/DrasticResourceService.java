@@ -12,7 +12,7 @@ import org.apache.commons.rdf.api.Dataset;
 import org.apache.commons.rdf.api.IRI;
 import org.apache.commons.rdf.api.Triple;
 import org.trellisldp.api.Resource;
-import org.trellisldp.spi.ResourceService;
+import org.trellisldp.api.ResourceService;
 
 /**
  * @author ajs6f
@@ -56,7 +56,7 @@ public class DrasticResourceService implements ResourceService {
     }
 
     @Override
-    public Stream<? extends Triple> list(final String partition) {
+    public Stream<? extends Triple> scan(final String partition) {
         // it is not necessary to implement this
         throw new UnsupportedOperationException("Resource listing not supported");
     }

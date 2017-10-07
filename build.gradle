@@ -29,8 +29,7 @@ ext {
     license = 'Apache 2'
 
     /* Dependencies */
-    trellisApiVersion = '0.1.1'
-    trellisSpiVersion = '0.1.4'
+    trellisApiVersion = '0.3.0'
     trellisVocabularyVersion = '0.1.0'
     commonsRdfVersion = '0.3.0-incubating'
     cassandraDriverVersion = '3.3.0'
@@ -53,7 +52,6 @@ configurations {
 dependencies {
     api group: 'org.apache.commons', name: 'commons-rdf-api', version: commonsRdfVersion
     api group: 'org.trellisldp', name: 'trellis-api', version: trellisApiVersion
-    api group: 'org.trellisldp', name: 'trellis-spi', version: trellisSpiVersion
 
     implementation group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
     implementation group: 'org.trellisldp', name: 'trellis-vocabulary', version: trellisVocabularyVersion
